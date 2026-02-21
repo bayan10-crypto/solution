@@ -1,0 +1,1246 @@
+<!doctype html>
+<html lang="kk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Заттардың суда еруі — 3 бет (симуляция • ш/ж • бәйге)</title>
+  <style>
+    :root{
+      --bg:#061424;
+      --bg2:#061a33;
+      --card:rgba(255,255,255,.06);
+      --line:rgba(255,255,255,.14);
+      --text:#eaf4ff;
+      --muted:#a9c3de;
+      --accent:#45d6ff;
+      --accent2:#7bffb2;
+      --good:#2ef7a1;
+      --bad:#ff4d6d;
+      --warn:#ffd166;
+      --shadow:0 14px 40px rgba(0,0,0,.35);
+      --r:18px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:var(--sans);
+      color:var(--text);
+      background:
+        radial-gradient(900px 540px at 18% 12%, rgba(69,214,255,.16), transparent 55%),
+        radial-gradient(860px 560px at 82% 20%, rgba(123,255,178,.12), transparent 55%),
+        radial-gradient(900px 600px at 55% 95%, rgba(255,209,102,.08), transparent 55%),
+        linear-gradient(180deg, var(--bg), var(--bg2));
+      min-height:100vh;
+      overflow-x:hidden;
+    }
+    .chem-bg{
+      position:fixed; inset:0; pointer-events:none;
+      background-image:
+        linear-gradient(90deg, rgba(255,255,255,.045) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(255,255,255,.045) 1px, transparent 1px);
+      background-size: 120px 120px;
+      opacity:.35;
+    }
+
+    header{
+      position:sticky; top:0; z-index:10;
+      backdrop-filter: blur(10px);
+      background: rgba(6,20,36,.60);
+      border-bottom:1px solid var(--line);
+    }
+    .wrap{max-width:1200px;margin:0 auto;padding:16px}
+    .top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+    .brand{display:flex;align-items:center;gap:12px}
+    .logo{
+      width:44px;height:44px;border-radius:14px;
+      border:1px solid rgba(255,255,255,.18);
+      background:
+        radial-gradient(circle at 35% 35%, rgba(69,214,255,.85), rgba(69,214,255,.18) 55%, transparent 60%),
+        radial-gradient(circle at 70% 70%, rgba(123,255,178,.75), rgba(123,255,178,.14) 55%, transparent 62%),
+        linear-gradient(135deg, rgba(255,255,255,.14), rgba(255,255,255,0));
+      box-shadow: var(--shadow);
+    }
+    h1{margin:0;font-size:16px;letter-spacing:.2px}
+    .sub{margin:2px 0 0;color:var(--muted);font-size:12px}
+
+    nav{display:flex;gap:10px;flex-wrap:wrap}
+    .tab{
+      text-decoration:none;color:var(--text);
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      padding:10px 12px;border-radius:999px;font-size:13px;
+      transition: transform .12s ease, border-color .12s ease, background .12s ease;
+      user-select:none;
+    }
+    .tab:hover{transform: translateY(-1px); border-color: rgba(69,214,255,.45);}
+    .tab.active{
+      background: linear-gradient(135deg, rgba(69,214,255,.22), rgba(123,255,178,.12));
+      border-color: rgba(69,214,255,.55);
+    }
+
+    main{padding:18px 0 44px}
+    .page{display:none}
+    .page.active{display:block}
+
+    .grid{display:grid;gap:16px}
+    @media (min-width: 980px){
+      .grid.cols-2{grid-template-columns: 1.1fr .9fr;}
+      .grid.cols-3{grid-template-columns: 1fr 1fr 1fr;}
+    }
+
+    .card{
+      border:1px solid rgba(255,255,255,.14);
+      background: linear-gradient(180deg, rgba(255,255,255,.065), rgba(255,255,255,.045));
+      border-radius: var(--r);
+      box-shadow: var(--shadow);
+      padding:16px;
+      position:relative;
+      overflow:hidden;
+    }
+    .card:before{
+      content:"";
+      position:absolute; right:-90px; top:-90px;
+      width:220px; height:220px;
+      background: radial-gradient(circle, rgba(69,214,255,.18), transparent 60%);
+    }
+    h2{margin:0 0 10px;font-size:18px}
+    h3{margin:0 0 8px;font-size:14px;color:#f2f8ff}
+    p{margin:0 0 10px}
+    .muted{color:var(--muted)}
+    .mono{font-family:var(--mono)}
+    .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .chip{
+      font-family:var(--mono);
+      font-size:12px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.16);
+    }
+
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    label.small{font-size:12px;color:var(--muted);display:block;margin-bottom:6px}
+    select, input[type="range"]{width:100%}
+    select{
+      padding:10px 10px;border-radius:12px;
+      border:1px solid rgba(255,255,255,.16);
+      background: rgba(0,0,0,.22);
+      color:var(--text);outline:none;
+    }
+    input[type="range"]{accent-color: var(--accent);}
+
+    button{
+      appearance:none;
+      border:1px solid rgba(255,255,255,.16);
+      background: rgba(0,0,0,.18);
+      color:var(--text);
+      padding:10px 12px;border-radius:12px;
+      cursor:pointer;
+      transition: transform .12s ease, border-color .12s ease;
+      font-size:13px;
+    }
+    button:hover{transform: translateY(-1px); border-color: rgba(69,214,255,.45);}
+    button.primary{
+      background: linear-gradient(135deg, rgba(69,214,255,.22), rgba(123,255,178,.12));
+      border-color: rgba(69,214,255,.55);
+    }
+    button.ghost{background: rgba(255,255,255,.06);}
+    button.danger{background: rgba(255,77,109,.12); border-color: rgba(255,77,109,.40);}
+
+    .panel{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.14);
+      border-radius:14px;
+      padding:12px;
+    }
+
+    .bar{height:10px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background: rgba(255,255,255,.06);overflow:hidden;margin-top:8px}
+    .fill{height:100%;width:0%;background: linear-gradient(90deg, rgba(69,214,255,.75), rgba(123,255,178,.65));transition: width .25s ease}
+
+    .result{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.14);
+      border-radius:14px;
+      padding:12px;
+      margin-top:12px;
+      font-size:13px;
+    }
+    .ok{color:var(--good); font-weight:700}
+    .bad{color:var(--bad); font-weight:700}
+    .warn{color:var(--warn); font-weight:700}
+
+    /* ===== Simulation beaker ===== */
+    .lab{
+      display:grid;gap:12px;
+      grid-template-columns: 1fr;
+    }
+    @media (min-width:980px){
+      .lab{grid-template-columns: 1fr 1fr;}
+    }
+    .beaker{
+      width:100%;
+      height:260px;
+      border-radius:18px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.12);
+      position:relative;
+      overflow:hidden;
+    }
+    .beaker svg{position:absolute; inset:0; width:100%; height:100%;}
+    .soluteDot{
+      position:absolute;
+      width:10px;height:10px;border-radius:4px;
+      border:1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.10);
+      opacity:.95;
+      transform: translate(-50%,-50%);
+      transition: opacity .25s ease, transform .25s ease;
+    }
+    .cloud{
+      position:absolute; inset:auto 10% 18% 10%;
+      height:64px;
+      border-radius:18px;
+      background: radial-gradient(circle at 30% 40%, rgba(69,214,255,.20), transparent 60%),
+                  radial-gradient(circle at 65% 60%, rgba(123,255,178,.16), transparent 60%),
+                  rgba(255,255,255,.02);
+      border:1px solid rgba(255,255,255,.08);
+      opacity:0;
+      transition: opacity .35s ease;
+      filter: blur(.2px);
+    }
+    .stir{
+      position:absolute;
+      left:50%; top:50%;
+      width:160px; height:160px;
+      border-radius:999px;
+      border:1px dashed rgba(255,255,255,.12);
+      transform: translate(-50%,-50%);
+      opacity:.0;
+      animation: spin 2.2s linear infinite;
+    }
+    @keyframes spin{
+      from{transform: translate(-50%,-50%) rotate(0deg);}
+      to{transform: translate(-50%,-50%) rotate(360deg);}
+    }
+
+    /* ===== True/False ===== */
+    .tf-item{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.12);
+      border-radius:14px;
+      padding:12px;
+      margin-bottom:10px;
+    }
+    .tf-head{
+      display:flex; gap:10px; align-items:flex-start; justify-content:space-between;
+      margin-bottom:10px;
+    }
+    .num{
+      font-family:var(--mono);
+      font-size:12px;
+      padding:4px 8px;
+      border-radius:10px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(69,214,255,.10);
+      white-space:nowrap;
+    }
+    .opt{
+      display:flex; gap:10px; align-items:flex-start;
+      padding:8px 10px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.04);
+      margin:8px 0;
+      cursor:pointer;
+      user-select:none;
+    }
+    .opt input{margin-top:2px}
+    .pill{
+      font-family:var(--mono);
+      font-size:12px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.05);
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      white-space:nowrap;
+    }
+
+    /* ===== Horse race ===== */
+    .raceTop{
+      display:grid;
+      gap:12px;
+      grid-template-columns: 1fr;
+    }
+    .track{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.12);
+      border-radius:16px;
+      padding:12px;
+      overflow:hidden;
+      position:relative;
+    }
+    .lanes{display:grid; gap:10px;}
+    .lane{
+      position:relative;
+      height:58px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background:
+        linear-gradient(90deg, rgba(255,255,255,.04), rgba(255,255,255,.02)),
+        repeating-linear-gradient(90deg, rgba(255,255,255,.12) 0 2px, transparent 2px 60px);
+      overflow:hidden;
+    }
+    .finish{
+      position:absolute; top:0; bottom:0; right:14px;
+      width:8px; border-radius:6px;
+      background: repeating-linear-gradient(0deg, rgba(255,255,255,.55) 0 6px, rgba(0,0,0,.0) 6px 12px);
+      opacity:.55;
+    }
+    .horse{
+      position:absolute;
+      left:8px; top:50%;
+      transform: translateY(-50%);
+      display:flex; align-items:center; gap:8px;
+      padding:8px 10px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.16);
+      box-shadow: 0 10px 20px rgba(0,0,0,.22);
+      transition: left .25s ease;
+      min-width:140px;
+    }
+    .horse .icon{
+      width:28px;height:28px;border-radius:10px;
+      border:1px solid rgba(255,255,255,.18);
+      display:grid;place-items:center;
+      background: radial-gradient(circle at 35% 35%, rgba(69,214,255,.20), rgba(0,0,0,.18));
+      font-size:16px;
+    }
+    .horse .name{
+      font-size:12px;
+      color:rgba(232,242,255,.95);
+      line-height:1.1;
+    }
+    .horse .name b{font-size:13px}
+    .raceHUD{
+      display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between;
+      margin-top:10px;
+    }
+    .raceHUD .pill{box-shadow:none}
+    .raceGrid{
+      display:grid; gap:16px;
+      grid-template-columns: 1fr;
+      margin-top:16px;
+    }
+    @media (min-width:980px){
+      .raceGrid{grid-template-columns: 1fr 1fr;}
+    }
+    .teamBox{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.10);
+      border-radius:16px;
+      padding:12px;
+    }
+    .teamBox h3{margin:0 0 6px}
+    .teamMeta{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+    .qArea{margin-top:10px}
+    .qText{margin:0; font-size:13px; line-height:1.35}
+    .choiceWrap{margin-top:10px}
+    .choiceWrap .opt{margin:8px 0}
+    .locked{
+      opacity:.9;
+    }
+    .footer{margin-top:14px;text-align:center;color:var(--muted);font-size:12px}
+  </style>
+</head>
+
+<body>
+  <div class="chem-bg" aria-hidden="true"></div>
+
+  <header>
+    <div class="wrap">
+      <div class="top">
+        <div class="brand">
+          <div class="logo" aria-hidden="true"></div>
+          <div>
+            <h1>Заттардың суда еруі</h1>
+            <div class="sub">1) Ақпарат + симуляция • 2) Шындық/Жалған • 3) Бәйге (4 топ)</div>
+          </div>
+        </div>
+
+        <nav aria-label="Навигация">
+          <a class="tab" href="#sim" data-page="sim">1-бет: Симуляция</a>
+          <a class="tab" href="#tf" data-page="tf">2-бет: Ш/Ж</a>
+          <a class="tab" href="#race" data-page="race">3-бет: Бәйге</a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <!-- ===== 1) SIMULATION ===== -->
+    <section id="page-sim" class="page active">
+      <div class="grid cols-2">
+        <div class="card">
+          <h2>Жалпы ақпарат</h2>
+          <p class="muted">
+            <b>Еру</b> — зат бөлшектерінің (молекула/ион) су молекулаларымен әрекеттесіп,
+            ерітіндіге біркелкі таралу процесі.
+          </p>
+
+          <div class="panel">
+            <h3>Еру жылдамдығына әсер ететін факторлар</h3>
+            <div class="chips">
+              <span class="chip">Температура ↑</span>
+              <span class="chip">Араластыру ↑</span>
+              <span class="chip">Ұнтақтау (бет ауданы ↑)</span>
+              <span class="chip">Зат табиғаты</span>
+              <span class="chip">Концентрация</span>
+            </div>
+            <p class="muted" style="margin-top:10px">
+              Жалпы идея: су мен еріген зат бөлшектері арасындағы тартылыс/гидратация күшті болса,
+              еру оңайырақ болады.
+            </p>
+          </div>
+
+          <div class="panel" style="margin-top:12px">
+            <h3>Еру туралы қысқа ереже</h3>
+            <p class="muted" style="margin:0">
+              «Ұқсас ұқсаста ериді»: полярлы заттар полярлы еріткіште (су) жақсы ериді.
+            </p>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Симуляциялық тапсырма (модель)</h2>
+          <p class="muted">Параметрлерді өзгертіңіз: еру жылдамдығы мен көрінісі өзгереді.</p>
+
+          <div class="lab">
+            <div>
+              <label class="small">Еритін зат түрі</label>
+              <select id="soluteType">
+                <option value="ionic">Иондық (мыс: NaCl)</option>
+                <option value="polar">Полярлы молекулалық (мыс: қант)</option>
+                <option value="nonpolar">Бейполярлы (мыс: май)</option>
+              </select>
+
+              <div class="row" style="margin-top:10px">
+                <div style="flex:1 1 220px">
+                  <label class="small">Температура (°C)</label>
+                  <input id="temp" type="range" min="0" max="90" value="25" />
+                  <div class="muted" style="font-size:12px;margin-top:6px">T: <span class="mono" id="tempVal">25</span>°C</div>
+                </div>
+                <div style="flex:1 1 220px">
+                  <label class="small">Ұнтақталуы (бет ауданы)</label>
+                  <input id="surface" type="range" min="0" max="100" value="50" />
+                  <div class="muted" style="font-size:12px;margin-top:6px">Бет ауданы: <span class="mono" id="surfaceVal">50</span>/100</div>
+                </div>
+              </div>
+
+              <div class="row" style="margin-top:10px">
+                <div style="flex:1 1 220px">
+                  <label class="small">Араластыру</label>
+                  <select id="stirSelect">
+                    <option value="0">Жоқ</option>
+                    <option value="1">Орташа</option>
+                    <option value="2">Күшті</option>
+                  </select>
+                </div>
+                <div style="flex:1 1 220px">
+                  <label class="small">Тұзақ (қанығу) эффекті</label>
+                  <select id="satSelect">
+                    <option value="0">Жоқ (жеңіл)</option>
+                    <option value="1">Бар (нақтырақ)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="row" style="margin-top:12px">
+                <button class="primary" id="startSim">Еруді бастау</button>
+                <button class="ghost" id="resetSim">Тазалау</button>
+              </div>
+
+              <div class="result" id="simResult">
+                <span class="muted">Параметрлерді таңдаңыз да, «Еруді бастау» басыңыз.</span>
+              </div>
+            </div>
+
+            <div>
+              <div class="beaker" id="beaker">
+                <!-- Beaker SVG -->
+                <svg viewBox="0 0 520 300" aria-hidden="true">
+                  <defs>
+                    <linearGradient id="water" x1="0" x2="0" y1="0" y2="1">
+                      <stop offset="0" stop-color="rgba(69,214,255,.18)"/>
+                      <stop offset="1" stop-color="rgba(69,214,255,.06)"/>
+                    </linearGradient>
+                    <linearGradient id="glass" x1="0" x2="1">
+                      <stop offset="0" stop-color="rgba(255,255,255,.10)"/>
+                      <stop offset="1" stop-color="rgba(255,255,255,.03)"/>
+                    </linearGradient>
+                  </defs>
+                  <!-- glass -->
+                  <path d="M150 30 h220 v20 l-25 200 q-2 20-20 20 H195 q-18 0-20-20 L150 50 Z"
+                        fill="url(#glass)" stroke="rgba(255,255,255,.18)" stroke-width="2"/>
+                  <!-- water -->
+                  <path id="waterShape" d="M172 100 h176 l-18 145 q-2 14-14 14 H204 q-12 0-14-14 L172 100 Z"
+                        fill="url(#water)" stroke="rgba(255,255,255,.10)" stroke-width="1"/>
+                  <!-- surface line -->
+                  <path d="M172 100 h176" stroke="rgba(255,255,255,.18)" stroke-width="2" opacity=".6"/>
+                  <!-- thermometer hint -->
+                  <g opacity=".5">
+                    <rect x="395" y="70" width="22" height="150" rx="10" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.12)"/>
+                    <circle cx="406" cy="230" r="16" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.12)"/>
+                  </g>
+                </svg>
+
+                <div class="cloud" id="cloud" aria-hidden="true"></div>
+                <div class="stir" id="stir" aria-hidden="true"></div>
+              </div>
+
+              <div class="panel" style="margin-top:12px">
+                <h3>Шығыс көрсеткіштері (модель)</h3>
+                <div class="muted" style="font-size:12px">Еру жылдамдығы</div>
+                <div class="bar"><div class="fill" id="speedBar"></div></div>
+                <div class="muted" style="font-size:12px;margin-top:8px">
+                  Болжам: <span class="mono" id="speedText">—</span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="footer">Ескерту: Бұл — оқу симуляциясы (қатаң ғылыми есептеу емес).</div>
+    </section>
+
+    <!-- ===== 2) TRUE/FALSE ===== -->
+    <section id="page-tf" class="page">
+      <div class="card">
+        <h2>Шындық / Жалған</h2>
+        <p class="muted">Әр тұжырымға жауап беріңіз. “Тексеру” басқанда бірден нәтиже шығады.</p>
+
+        <div id="tfRoot"></div>
+
+        <div class="row" style="margin-top:10px">
+          <button class="primary" id="tfGrade">Жалпы нәтижені шығару</button>
+          <button id="tfReset">Қайта бастау</button>
+        </div>
+        <div class="result" id="tfResult"></div>
+      </div>
+    </section>
+
+    <!-- ===== 3) RACE ===== -->
+    <section id="page-race" class="page">
+      <div class="card">
+        <h2>Бәйге (ат жарысы) — 4 топ</h2>
+        <p class="muted">
+          Әр топқа бір ат. Сұрақтар <b>бір-бірден</b> шығады. Дұрыс жауап берсе — ат <b>бір қадам</b> алға жылжиды.
+          Нәтиже бірден көрсетіледі.
+        </p>
+
+        <div class="raceTop">
+          <div class="track">
+            <div class="lanes" id="lanes"></div>
+          </div>
+
+          <div class="raceHUD">
+            <div class="row">
+              <span class="pill">⏱️ <span class="mono" id="raceTime">00:00</span></span>
+              <span class="pill">🏁 Қадам: <span class="mono">1 дұрыс жауап = +1</span></span>
+            </div>
+            <div class="row">
+              <button class="primary" id="raceStart">Бастау</button>
+              <button class="danger" id="raceReset">Қайта бастау</button>
+            </div>
+          </div>
+
+          <div class="result" id="raceStatus">
+            <span class="warn">Нұсқау:</span> “Бастау” басыңыз. Әр топ өз сұрағына жауап береді.
+          </div>
+        </div>
+
+        <div class="raceGrid" id="raceGrid"></div>
+
+        <div class="footer">Ұпай/жылжу — тек дұрыс жауап үшін. Барлық сұрақ біткенде немесе мәреге жеткенде жеңімпаз анықталады.</div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    /* ================== NAV ================== */
+    const tabs = Array.from(document.querySelectorAll(".tab"));
+    const pages = {
+      sim: document.getElementById("page-sim"),
+      tf: document.getElementById("page-tf"),
+      race: document.getElementById("page-race"),
+    };
+    function setActive(key){
+      Object.entries(pages).forEach(([k,el])=>el.classList.toggle("active", k===key));
+      tabs.forEach(t=>t.classList.toggle("active", t.dataset.page===key));
+    }
+    function route(){
+      const key = (location.hash || "#sim").replace("#","");
+      setActive(pages[key] ? key : "sim");
+    }
+    window.addEventListener("hashchange", route);
+    route();
+
+    /* ================== 1) SIMULATION ================== */
+    const soluteType = document.getElementById("soluteType");
+    const temp = document.getElementById("temp");
+    const surface = document.getElementById("surface");
+    const stirSelect = document.getElementById("stirSelect");
+    const satSelect = document.getElementById("satSelect");
+
+    const tempVal = document.getElementById("tempVal");
+    const surfaceVal = document.getElementById("surfaceVal");
+    const startSim = document.getElementById("startSim");
+    const resetSim = document.getElementById("resetSim");
+
+    const beaker = document.getElementById("beaker");
+    const cloud = document.getElementById("cloud");
+    const stir = document.getElementById("stir");
+    const speedBar = document.getElementById("speedBar");
+    const speedText = document.getElementById("speedText");
+    const simResult = document.getElementById("simResult");
+
+    let dots = [];
+    let simTimer = null;
+    let simProgress = 0;
+
+    function clamp(n,a,b){ return Math.max(a, Math.min(b,n)); }
+
+    function updateSimLabels(){
+      tempVal.textContent = temp.value;
+      surfaceVal.textContent = surface.value;
+      renderSimPrediction();
+    }
+
+    function soluteBase(type){
+      // 0..100: суға жақындығы
+      if(type==="ionic") return 80;
+      if(type==="polar") return 70;
+      return 20; // nonpolar
+    }
+
+    function computeSpeed(){
+      const base = soluteBase(soluteType.value);          // табиғат
+      const T = Number(temp.value);                      // 0..90
+      const S = Number(surface.value);                   // 0..100
+      const stirLvl = Number(stirSelect.value);          // 0,1,2
+      const sat = Number(satSelect.value);               // 0/1
+
+      // температура әсері: бейполярлыда да аздап өседі, бірақ база төмен
+      const tempBoost = (T/90)*30;
+
+      // бет ауданы: 0..25
+      const surfaceBoost = (S/100)*25;
+
+      // араластыру: 0..20
+      const stirBoost = stirLvl*10;
+
+      // қанығу эффекті: шектеу (реалистік) — жоғары база болса, жылдамдық “төмендей” бастайды
+      let speed = base*0.55 + tempBoost + surfaceBoost + stirBoost;
+
+      if(sat===1){
+        // қаныққан сайын баяулау: speed тым жоғары болса, аздап кесу
+        speed = speed - Math.max(0, speed-75)*0.6;
+      }
+
+      return clamp(Math.round(speed), 0, 100);
+    }
+
+    function labelSpeed(v){
+      if(v>=80) return "Өте жылдам";
+      if(v>=60) return "Жылдам";
+      if(v>=40) return "Орташа";
+      if(v>=20) return "Баяу";
+      return "Өте баяу / нашар ериді";
+    }
+
+    function renderSimPrediction(){
+      const sp = computeSpeed();
+      speedBar.style.width = sp + "%";
+      speedText.textContent = `${labelSpeed(sp)} (${sp}%)`;
+
+      // visuals hints
+      const st = Number(stirSelect.value);
+      stir.style.opacity = st>0 ? "1" : "0";
+      stir.style.animationDuration = st===2 ? "1.2s" : "2.2s";
+
+      // cloud appears if dissolving is happening
+      cloud.style.opacity = (soluteType.value==="nonpolar") ? "0.05" : "0.35";
+    }
+
+    function clearDots(){
+      dots.forEach(d=>d.remove());
+      dots = [];
+    }
+
+    function spawnDots(count){
+      clearDots();
+      // place dots near top water line and sink down a bit
+      for(let i=0;i<count;i++){
+        const d = document.createElement("div");
+        d.className = "soluteDot";
+        // beaker relative placement roughly inside water
+        const x = 35 + Math.random()*30;     // %
+        const y = 33 + Math.random()*10;     // %
+        d.style.left = x + "%";
+        d.style.top = y + "%";
+
+        // color by type
+        const type = soluteType.value;
+        if(type==="ionic"){
+          d.style.background = "rgba(69,214,255,.22)";
+          d.style.borderColor = "rgba(69,214,255,.45)";
+        }else if(type==="polar"){
+          d.style.background = "rgba(123,255,178,.18)";
+          d.style.borderColor = "rgba(123,255,178,.38)";
+        }else{
+          d.style.background = "rgba(255,209,102,.16)";
+          d.style.borderColor = "rgba(255,209,102,.30)";
+        }
+
+        beaker.appendChild(d);
+        dots.push(d);
+      }
+    }
+
+    function simStep(){
+      const sp = computeSpeed(); // 0..100
+      // progress increment depends on speed
+      const inc = (sp/100) * 0.06 + 0.01; // per tick
+      simProgress = clamp(simProgress + inc, 0, 1);
+
+      // dots fade out as they "dissolve"
+      const dissolveCount = Math.floor(simProgress * dots.length);
+      dots.forEach((d, idx)=>{
+        if(idx < dissolveCount){
+          d.style.opacity = "0";
+          d.style.transform = "translate(-50%,-50%) scale(0.6)";
+        }else{
+          // swirl a bit if stirring
+          const st = Number(stirSelect.value);
+          if(st>0){
+            const jitter = (st===2 ? 5 : 3);
+            d.style.transform = `translate(-50%,-50%) translate(${(Math.random()*jitter-jitter/2).toFixed(1)}px, ${(Math.random()*jitter-jitter/2).toFixed(1)}px)`;
+          }
+        }
+      });
+
+      // “cloud” intensity with progress for ionic/polar, very low for nonpolar
+      if(soluteType.value==="nonpolar"){
+        cloud.style.opacity = 0.08 + simProgress*0.12;
+      }else{
+        cloud.style.opacity = 0.18 + simProgress*0.45;
+      }
+
+      if(simProgress >= 1){
+        clearInterval(simTimer);
+        simTimer = null;
+
+        const type = soluteType.value;
+        let note = "";
+        if(type==="nonpolar"){
+          note = "Бейполярлы зат суға нашар ериді: көбіне бөлек қабат түзуі мүмкін.";
+        }else if(type==="ionic"){
+          note = "Иондық заттар судa иондарға диссоциацияланып, гидратацияланады — әдетте жақсы ериді.";
+        }else{
+          note = "Полярлы молекулалар су молекулаларымен сутектік/диполь-диполь әрекеттесіп ериді.";
+        }
+
+        simResult.innerHTML = `<span class="ok">Симуляция аяқталды ✅</span><br><span class="muted">${note}</span>`;
+      }
+    }
+
+    function startSimulation(){
+      if(simTimer) return;
+      simProgress = 0;
+
+      const sp = computeSpeed();
+      // dots count depends on speed & surface
+      const count = clamp(Math.round(18 + (Number(surface.value)/100)*22), 18, 45);
+      spawnDots(count);
+
+      simResult.innerHTML = `<span class="muted">Еру жүріп жатыр…</span> Болжам жылдамдық: <b>${labelSpeed(sp)}</b> (${sp}%).`;
+
+      // show stir ring depending on stirring
+      renderSimPrediction();
+
+      simTimer = setInterval(simStep, 120);
+    }
+
+    function resetSimulation(){
+      if(simTimer){ clearInterval(simTimer); simTimer=null; }
+      simProgress = 0;
+      clearDots();
+      cloud.style.opacity = "0";
+      stir.style.opacity = "0";
+      speedBar.style.width = "0%";
+      speedText.textContent = "—";
+      simResult.innerHTML = `<span class="muted">Параметрлерді таңдаңыз да, «Еруді бастау» басыңыз.</span>`;
+      renderSimPrediction();
+    }
+
+    [soluteType,temp,surface,stirSelect,satSelect].forEach(el=>el.addEventListener("input", updateSimLabels));
+    [soluteType,stirSelect,satSelect].forEach(el=>el.addEventListener("change", updateSimLabels));
+    startSim.addEventListener("click", startSimulation);
+    resetSim.addEventListener("click", resetSimulation);
+    updateSimLabels();
+
+    /* ================== 2) TRUE/FALSE ================== */
+    const tfData = [
+      { s:"Температураны арттыру көптеген қатты заттардың суда еру жылдамдығын арттырады.", a:true },
+      { s:"Ұнтақтау (бет ауданын үлкейту) еру жылдамдығына әсер етпейді.", a:false },
+      { s:"Араластыру ерітіндідегі заттың таралуын жылдамдатып, еруді тездетуі мүмкін.", a:true },
+      { s:"Бейполярлы заттар (май тәрізді) суға көбіне нашар ериді.", a:true },
+      { s:"Еру — әрқашан химиялық реакция, физикалық процесс болмайды.", a:false },
+      { s:"Қаныққан ерітіндіде қосымша заттың еруі баяулайды немесе тоқтайды.", a:true },
+      { s:"“Ұқсас ұқсаста ериді” ережесі полярлыққа байланысты.", a:true },
+      { s:"Иондық заттар суда ерігенде иондарға диссоциациялануы мүмкін.", a:true }
+    ];
+
+    const tfRoot = document.getElementById("tfRoot");
+    const tfGrade = document.getElementById("tfGrade");
+    const tfReset = document.getElementById("tfReset");
+    const tfResult = document.getElementById("tfResult");
+
+    function buildTF(){
+      tfRoot.innerHTML = "";
+      tfData.forEach((item,i)=>{
+        const id = `tf${i}`;
+        const div = document.createElement("div");
+        div.className = "tf-item";
+        div.innerHTML = `
+          <div class="tf-head">
+            <div class="num">${i+1}</div>
+            <div style="flex:1 1 auto">
+              <div style="font-size:13px; line-height:1.35">${item.s}</div>
+            </div>
+            <span class="pill" id="${id}tag">—</span>
+          </div>
+
+          <div class="row" style="gap:8px">
+            <label class="opt" style="margin:0">
+              <input type="radio" name="${id}" value="true" />
+              <span>Шындық</span>
+            </label>
+            <label class="opt" style="margin:0">
+              <input type="radio" name="${id}" value="false" />
+              <span>Жалған</span>
+            </label>
+            <button class="primary" data-tfcheck="${i}">Тексеру</button>
+          </div>
+
+          <div class="muted" id="${id}msg" style="margin-top:10px;font-size:12px">Жауапты таңдаңыз.</div>
+        `;
+        tfRoot.appendChild(div);
+      });
+
+      tfRoot.querySelectorAll("button[data-tfcheck]").forEach(btn=>{
+        btn.addEventListener("click", ()=>{
+          const i = Number(btn.dataset.tfcheck);
+          const id = `tf${i}`;
+          const sel = tfRoot.querySelector(`input[name="${id}"]:checked`);
+          const tag = document.getElementById(id+"tag");
+          const msg = document.getElementById(id+"msg");
+          if(!sel){
+            msg.innerHTML = `<span class="warn">Ескерту:</span> Таңдалмаған.`;
+            return;
+          }
+          const chosen = (sel.value === "true");
+          const ok = chosen === tfData[i].a;
+
+          tag.textContent = ok ? "ДҰРЫС" : "ҚАТЕ";
+          tag.style.borderColor = ok ? "rgba(46,247,161,.45)" : "rgba(255,77,109,.45)";
+          tag.style.background = ok ? "rgba(46,247,161,.10)" : "rgba(255,77,109,.10)";
+          msg.innerHTML = ok
+            ? `<span class="ok">Дұрыс ✅</span>`
+            : `<span class="bad">Қате ❌</span> Дұрыс жауап: <b>${tfData[i].a ? "Шындық" : "Жалған"}</b>.`;
+
+          // lock
+          tfRoot.querySelectorAll(`input[name="${id}"]`).forEach(inp=>inp.disabled=true);
+          btn.disabled = true;
+        });
+      });
+
+      tfResult.innerHTML = `<span class="muted">Барлығын орындап, «Жалпы нәтижені шығару» басыңыз.</span>`;
+    }
+
+    tfGrade.addEventListener("click", ()=>{
+      let correct = 0, answered = 0;
+      tfData.forEach((item,i)=>{
+        const sel = tfRoot.querySelector(`input[name="tf${i}"]:checked`);
+        if(sel){
+          answered++;
+          if((sel.value==="true") === item.a) correct++;
+        }
+      });
+      const total = tfData.length;
+      const pct = Math.round((correct/total)*100);
+      tfResult.innerHTML = `Нәтиже: <b>${correct}/${total}</b> (${pct}%). ` +
+        (answered<total ? `<span class="warn">(${total-answered} жауап жоқ)</span>` : `<span class="ok">Жауаптардың бәрі берілді ✅</span>`);
+    });
+    tfReset.addEventListener("click", buildTF);
+    buildTF();
+
+    /* ================== 3) RACE (4 TEAMS) ================== */
+    const lanesEl = document.getElementById("lanes");
+    const raceGrid = document.getElementById("raceGrid");
+    const raceStart = document.getElementById("raceStart");
+    const raceReset = document.getElementById("raceReset");
+    const raceTime = document.getElementById("raceTime");
+    const raceStatus = document.getElementById("raceStatus");
+
+    const TEAMS = [
+      { key:"T1", name:"1-топ", icon:"🏇", colorA:"rgba(69,214,255,.22)" },
+      { key:"T2", name:"2-топ", icon:"🐎", colorA:"rgba(123,255,178,.18)" },
+      { key:"T3", name:"3-топ", icon:"🏇", colorA:"rgba(255,209,102,.16)" },
+      { key:"T4", name:"4-топ", icon:"🐎", colorA:"rgba(255,77,109,.12)" },
+    ];
+
+    // Questions: dissolution topic (mix, not identical to TF)
+    const raceQuestions = {
+      T1: [
+        { type:"mcq", q:"Еру жылдамдығын арттыратын әрекет:", options:["Ұнтақтау","Суды салқындату","Араластыруды тоқтату","Бет ауданын азайту"], a:0 },
+        { type:"mcq", q:"Қанттың суда еруі көбіне қандай әрекеттесулерге байланысты?", options:["Диссоциация","Сутектік байланыс/диполь-диполь","Металдық байланыс","Иондық тор"], a:1 },
+        { type:"tf",  q:"Қаныққан ерітіндіде зат әлі де шексіз ери береді.", options:["Шындық","Жалған"], a:1 },
+        { type:"mcq", q:"Температураны көтергенде көп қатты заттардың еруі:", options:["Жылдамдайды","Әрқашан тоқтайды","Өзгермейді","Тек бейполярлыда болады"], a:0 },
+        { type:"mcq", q:"Еру кезінде зат бөлшектері суға таралады — бұл көбіне:", options:["Физикалық процесс","Тек химиялық реакция","Жану процесі","Балқу ғана"], a:0 },
+      ],
+      T2: [
+        { type:"mcq", q:"Майдың суда нашар еруінің басты себебі:", options:["Май өте ауыр","Май бейполярлы, су полярлы","Су қышқыл","Май иондық"], a:1 },
+        { type:"mcq", q:"Араластырудың әсері:", options:["Еруді баяулатады","Еруді тездетеді, шекара қабатын азайтады","Тек газдарға әсер етеді","Тек температураны өзгертеді"], a:1 },
+        { type:"mcq", q:"Еритін заттың бет ауданы артса:", options:["Еру жылдамдығы артады","Еру тоқтайды","Еру жылдамдығы төмендейді","Тек иондықта болады"], a:0 },
+        { type:"tf",  q:"Иондық заттар суда ерігенде иондарға бөлінуі мүмкін.", options:["Шындық","Жалған"], a:0 },
+        { type:"mcq", q:"“Ұқсас ұқсаста ериді” қағидасы негізінен:", options:["Түске","Полярлыққа","Тығыздыққа","Жылтырға"], a:1 },
+      ],
+      T3: [
+        { type:"mcq", q:"Еру жылдамдығына әсер етпейтін фактор ретінде қайсысы дұрыс?", options:["Зат табиғаты","Температура","Араластыру","Заттың түсі (көбіне)"], a:3 },
+        { type:"mcq", q:"Қатты зат суда ерігенде жиі байқалатын құбылыс:", options:["Гидратация","Металдану","Кристалдану бірден","Вакуум"], a:0 },
+        { type:"tf",  q:"Ерігіштік пен еру жылдамдығы бір мағына, әрқашан тең.", options:["Шындық","Жалған"], a:1 },
+        { type:"mcq", q:"Ерігіштік дегеніміз:", options:["Ерудің жылдамдығы","Белгілі температурада ери алатын ең көп мөлшер","Судың көлемі","Түстің өзгеруі"], a:1 },
+        { type:"mcq", q:"Газдардың суда еруі температура артқанда көбіне:", options:["Артады","Төмендейді","Өзгермейді","Әрқашан нөл"], a:1 },
+      ],
+      T4: [
+        { type:"mcq", q:"Қантты жылы суда ерітсе, суыққа қарағанда:", options:["Баяу ериді","Тез ериді","Ешқашан ерімейді","Тек түсі өзгереді"], a:1 },
+        { type:"tf",  q:"Араластыру ерітіндінің біркелкі болуына көмектеседі.", options:["Шындық","Жалған"], a:0 },
+        { type:"mcq", q:"Еру барысында бөлшектердің су молекулаларымен қоршалуы:", options:["Гидратация/солватация","Булану","Конденсация","Кристалдану"], a:0 },
+        { type:"mcq", q:"Бет ауданы азайса (ірі түйір), еру:", options:["Жылдамдайды","Баяулайды","Өзгермейді","Тек газға тән"], a:1 },
+        { type:"mcq", q:"Ерігіштікке ең күшті әсер ететіндердің бірі:", options:["Температура","Дәм","Пішін","Жарық"], a:0 },
+      ],
+    };
+
+    const raceState = {
+      started:false,
+      startTime:null,
+      timerId:null,
+      step: 0,                 // finish steps
+      pos: {T1:0, T2:0, T3:0, T4:0},
+      idx: {T1:0, T2:0, T3:0, T4:0},
+      locked: {T1:false, T2:false, T3:false, T4:false}, // locking while showing feedback
+      done: {T1:false, T2:false, T3:false, T4:false},
+      winner: null
+    };
+
+    const FINISH_STEPS = 6;          // after 6 correct answers, reach finish (but each team has 5 Q; so can win by reaching max Q correct + others)
+    const MAX_STEPS = 6;
+    const LEFT_MIN = 8;              // percent
+    const LEFT_MAX = 78;             // percent
+
+    function formatTime(ms){
+      const sec = Math.floor(ms/1000);
+      const m = String(Math.floor(sec/60)).padStart(2,"0");
+      const s = String(sec%60).padStart(2,"0");
+      return `${m}:${s}`;
+    }
+    function raceTick(){
+      raceTime.textContent = formatTime(Date.now() - raceState.startTime);
+    }
+
+    function laneLeftForSteps(steps){
+      // map 0..MAX_STEPS to LEFT_MIN..LEFT_MAX
+      const t = steps / MAX_STEPS;
+      return LEFT_MIN + t*(LEFT_MAX-LEFT_MIN);
+    }
+
+    function buildRaceUI(){
+      // lanes
+      lanesEl.innerHTML = "";
+      TEAMS.forEach((t, i)=>{
+        const lane = document.createElement("div");
+        lane.className = "lane";
+        lane.innerHTML = `
+          <div class="finish" aria-hidden="true"></div>
+          <div class="horse" id="horse-${t.key}" style="left:${laneLeftForSteps(0)}%">
+            <div class="icon" style="background:${t.colorA}">${t.icon}</div>
+            <div class="name"><b>${t.name}</b><br><span class="muted mono">қадам: <span id="step-${t.key}">0</span></span></div>
+          </div>
+        `;
+        lanesEl.appendChild(lane);
+      });
+
+      // question panels
+      raceGrid.innerHTML = "";
+      TEAMS.forEach(t=>{
+        const box = document.createElement("div");
+        box.className = "teamBox";
+        box.id = `box-${t.key}`;
+        box.innerHTML = `
+          <div class="teamMeta">
+            <h3>${t.icon} ${t.name}</h3>
+            <span class="pill">Сұрақ: <span class="mono" id="qnum-${t.key}">1</span>/${raceQuestions[t.key].length}</span>
+          </div>
+          <div class="qArea">
+            <p class="qText" id="qtext-${t.key}">—</p>
+            <div class="choiceWrap" id="choices-${t.key}"></div>
+            <div class="row" style="margin-top:10px;justify-content:space-between">
+              <button class="primary" data-rcheck="${t.key}">Тексеру</button>
+              <button class="ghost" data-rnext="${t.key}">Келесі</button>
+            </div>
+            <div class="result" id="rmsg-${t.key}"><span class="muted">“Бастау” басқанда сұрақ шығады.</span></div>
+          </div>
+        `;
+        raceGrid.appendChild(box);
+      });
+    }
+
+    function setHorsePos(teamKey){
+      const steps = raceState.pos[teamKey];
+      const horse = document.getElementById(`horse-${teamKey}`);
+      const stepEl = document.getElementById(`step-${teamKey}`);
+      if(stepEl) stepEl.textContent = steps;
+      if(horse) horse.style.left = laneLeftForSteps(steps) + "%";
+    }
+
+    function renderTeamQuestion(teamKey){
+      const qs = raceQuestions[teamKey];
+      const i = raceState.idx[teamKey];
+      const q = qs[i];
+
+      const qTextEl = document.getElementById(`qtext-${teamKey}`);
+      const choicesEl = document.getElementById(`choices-${teamKey}`);
+      const qNumEl = document.getElementById(`qnum-${teamKey}`);
+      const msgEl = document.getElementById(`rmsg-${teamKey}`);
+
+      if(raceState.done[teamKey]){
+        qTextEl.textContent = "✅ Бұл топ барлық сұрақты аяқтады.";
+        choicesEl.innerHTML = "";
+        msgEl.innerHTML = `<span class="ok">Аяқталды ✅</span>`;
+        return;
+      }
+
+      qNumEl.textContent = (i+1);
+      qTextEl.textContent = q.q;
+
+      const name = `race-${teamKey}-q${i}`;
+      choicesEl.innerHTML = q.options.map((opt, oi)=>`
+        <label class="opt">
+          <input type="radio" name="${name}" value="${oi}">
+          <span>${opt}</span>
+        </label>
+      `).join("");
+
+      msgEl.innerHTML = `<span class="muted">Жауапты таңдаңыз да “Тексеру” басыңыз.</span>`;
+      raceState.locked[teamKey] = false;
+      // enable inputs/buttons
+      document.querySelectorAll(`#box-${teamKey} input`).forEach(inp=>inp.disabled=false);
+      document.querySelectorAll(`#box-${teamKey} button`).forEach(b=>b.disabled=false);
+    }
+
+    function lockTeam(teamKey){
+      document.querySelectorAll(`#box-${teamKey} input`).forEach(inp=>inp.disabled=true);
+      // disable check only, allow next
+      const checkBtn = document.querySelector(`#box-${teamKey} button[data-rcheck="${teamKey}"]`);
+      if(checkBtn) checkBtn.disabled = true;
+      raceState.locked[teamKey] = true;
+    }
+
+    function markRaceOptions(teamKey, correctIndex, chosenIndex){
+      const box = document.getElementById(`box-${teamKey}`);
+      const opts = Array.from(box.querySelectorAll(".opt"));
+      opts.forEach(o=>{
+        o.style.borderColor = "rgba(255,255,255,.10)";
+        o.style.background = "rgba(255,255,255,.04)";
+      });
+      if(opts[correctIndex]){
+        opts[correctIndex].style.borderColor = "rgba(46,247,161,.55)";
+        opts[correctIndex].style.background = "rgba(46,247,161,.10)";
+      }
+      if(chosenIndex != null && chosenIndex !== correctIndex && opts[chosenIndex]){
+        opts[chosenIndex].style.borderColor = "rgba(255,77,109,.55)";
+        opts[chosenIndex].style.background = "rgba(255,77,109,.10)";
+      }
+    }
+
+    function updateRaceStatus(){
+      if(!raceState.started){
+        raceStatus.innerHTML = `<span class="warn">Нұсқау:</span> “Бастау” басыңыз. Әр топ өз сұрағына жауап береді.`;
+        return;
+      }
+
+      if(raceState.winner){
+        raceStatus.innerHTML = `<span class="ok">🏆 Жеңімпаз: ${raceState.winner}!</span> <span class="muted">(Уақыт: ${raceTime.textContent})</span>`;
+        return;
+      }
+
+      const doneCount = Object.values(raceState.done).filter(Boolean).length;
+      raceStatus.innerHTML =
+        `Ойын жүріп жатыр… <span class="muted">Аяқтаған топтар: ${doneCount}/4</span>. `+
+        `Мәреге жақындаған аттар: `+
+        `<span class="mono">T1=${raceState.pos.T1}, T2=${raceState.pos.T2}, T3=${raceState.pos.T3}, T4=${raceState.pos.T4}</span>`;
+    }
+
+    function maybeFinishRace(){
+      // Winner rule:
+      // 1) If any team reaches MAX_STEPS (finish), they win immediately.
+      // 2) Else if all teams finished questions: highest steps wins; tie -> earliest finish by time not tracked per team here -> tie declared.
+      const maxTeam = Object.entries(raceState.pos).sort((a,b)=>b[1]-a[1])[0];
+      const [bestKey, bestSteps] = maxTeam;
+
+      if(bestSteps >= MAX_STEPS){
+        raceState.winner = TEAMS.find(t=>t.key===bestKey).name;
+      } else {
+        const allDone = Object.values(raceState.done).every(Boolean);
+        if(allDone){
+          // check ties
+          const stepsArr = Object.values(raceState.pos);
+          const max = Math.max(...stepsArr);
+          const winners = Object.entries(raceState.pos).filter(([k,v])=>v===max).map(([k])=>k);
+          if(winners.length===1){
+            raceState.winner = TEAMS.find(t=>t.key===winners[0]).name;
+          } else {
+            raceState.winner = "ТЕҢ (бірнеше топ)";
+          }
+        }
+      }
+
+      if(raceState.winner){
+        if(raceState.timerId){ clearInterval(raceState.timerId); raceState.timerId=null; }
+      }
+      updateRaceStatus();
+    }
+
+    function startRace(){
+      if(raceState.started) return;
+      raceState.started = true;
+      raceState.startTime = Date.now();
+      raceTime.textContent = "00:00";
+      raceState.timerId = setInterval(raceTick, 250);
+
+      // render first question for each team
+      TEAMS.forEach(t=>renderTeamQuestion(t.key));
+      updateRaceStatus();
+    }
+
+    function resetRace(){
+      if(raceState.timerId){ clearInterval(raceState.timerId); raceState.timerId=null; }
+
+      raceState.started=false;
+      raceState.startTime=null;
+      raceState.winner=null;
+
+      TEAMS.forEach(t=>{
+        raceState.pos[t.key]=0;
+        raceState.idx[t.key]=0;
+        raceState.locked[t.key]=false;
+        raceState.done[t.key]=false;
+      });
+
+      raceTime.textContent = "00:00";
+      buildRaceUI();
+      TEAMS.forEach(t=>setHorsePos(t.key));
+      updateRaceStatus();
+    }
+
+    function handleRaceCheck(teamKey){
+      if(!raceState.started){
+        raceStatus.innerHTML = `<span class="warn">Алдымен “Бастау” басыңыз.</span>`;
+        return;
+      }
+      if(raceState.winner) return;
+      if(raceState.done[teamKey]) return;
+      if(raceState.locked[teamKey]) return;
+
+      const i = raceState.idx[teamKey];
+      const q = raceQuestions[teamKey][i];
+      const name = `race-${teamKey}-q${i}`;
+      const sel = document.querySelector(`input[name="${name}"]:checked`);
+      const msgEl = document.getElementById(`rmsg-${teamKey}`);
+
+      if(!sel){
+        msgEl.innerHTML = `<span class="warn">Жауап таңдалмаған.</span>`;
+        return;
+      }
+
+      const chosen = Number(sel.value);
+      const correct = q.a;
+      const ok = chosen === correct;
+
+      markRaceOptions(teamKey, correct, chosen);
+
+      if(ok){
+        raceState.pos[teamKey] = clamp(raceState.pos[teamKey] + 1, 0, MAX_STEPS);
+        setHorsePos(teamKey);
+        msgEl.innerHTML = `<span class="ok">Дұрыс ✅</span> Ат 1 қадам алға жылжыды.`;
+      }else{
+        msgEl.innerHTML = `<span class="bad">Қате ❌</span> Дұрыс жауап белгіленді.`;
+      }
+
+      lockTeam(teamKey);
+      updateRaceStatus();
+      maybeFinishRace();
+    }
+
+    function handleRaceNext(teamKey){
+      if(!raceState.started){
+        raceStatus.innerHTML = `<span class="warn">Алдымен “Бастау” басыңыз.</span>`;
+        return;
+      }
+      if(raceState.winner) return;
+      if(raceState.done[teamKey]) return;
+
+      // allow next even if not answered, but encourage answering
+      const i = raceState.idx[teamKey];
+      const msgEl = document.getElementById(`rmsg-${teamKey}`);
+      const name = `race-${teamKey}-q${i}`;
+      const sel = document.querySelector(`input[name="${name}"]:checked`);
+      if(!sel && !raceState.locked[teamKey]){
+        msgEl.innerHTML = `<span class="warn">Алдымен “Тексеру” арқылы жауап беріңіз.</span>`;
+        return;
+      }
+
+      // move to next question
+      raceState.idx[teamKey] += 1;
+      if(raceState.idx[teamKey] >= raceQuestions[teamKey].length){
+        raceState.done[teamKey] = true;
+      }
+      renderTeamQuestion(teamKey);
+      updateRaceStatus();
+      maybeFinishRace();
+    }
+
+    document.addEventListener("click", (e)=>{
+      const c = e.target.closest("button[data-rcheck]");
+      const n = e.target.closest("button[data-rnext]");
+      if(c) handleRaceCheck(c.dataset.rcheck);
+      if(n) handleRaceNext(n.dataset.rnext);
+    });
+    raceStart.addEventListener("click", startRace);
+    raceReset.addEventListener("click", resetRace);
+
+    // init race UI
+    resetRace();
+  </script>
+</body>
+</html>
